@@ -1,0 +1,43 @@
+<div class="opportunities-container">
+  <h2>CRM Opportunities</h2>
+  <p class="subtitle">Data source for the AI assistant - used by RAG and Tool Calling features.</p>
+
+  <div class="loading-state" *ngIf="loading">Loading opportunities...</div>
+
+  <div class="table-wrapper" *ngIf="!loading">
+    <table>
+      <thead>
+        <tr>
+          <th>Opportunity</th>
+          <th>Company</th>
+          <th>Contact</th>
+          <th>Stage</th>
+          <th>Priority</th>
+          <th>Value</th>
+          <th>Probability</th>
+          <th>Owner</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let opp of opportunities">
+          <td class="cell-name">{{ opp.opportunity_name }}</td>
+          <td>{{ opp.company_name }}</td>
+          <td>{{ opp.contact_name }}</td>
+          <td>
+            <span class="stage-badge {{ stageClass(opp.stage) }}">{{ opp.stage }}</span>
+          </td>
+          <td>
+            <span class="priority-badge {{ priorityClass(opp.priority) }}">{{ opp.priority }}</span>
+          </td>
+          <td class="cell-value">{{ opp.estimated_value | number:'1.0-0' }} {{ opp.currency }}</td>
+          <td>{{ opp.probability }}%</td>
+          <td>{{ opp.owner || '—' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && opportunities.length === 0">
+    No opportunities found. Add some through the Django admin.
+  </div>
+</div>

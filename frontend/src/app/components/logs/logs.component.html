@@ -1,0 +1,38 @@
+<div class="logs-container">
+  <h2>Interaction Logs</h2>
+  <p class="subtitle">All interactions with the AI assistant are logged for monitoring and evaluation.</p>
+
+  <div class="loading-state" *ngIf="loading">Loading logs...</div>
+
+  <div class="log-card" *ngFor="let log of logs">
+    <div class="log-header">
+      <span class="log-time">{{ log.created_at | date:'medium' }}</span>
+      <span class="log-badge" [class.rag-yes]="log.rag_context_used">RAG: {{ log.rag_context_used ? 'Yes' : 'No' }}</span>
+      <span class="log-badge hallucination" [class.safe]="(log.hallucination_score || 1) >= 0.8" [class.unsafe]="(log.hallucination_score || 1) < 0.8">
+        H-Score: {{ log.hallucination_score != null ? log.hallucination_score : 'N/A' }}
+      </span>
+    </div>
+    <div class="log-messages">
+      <div class="log-user">
+        <strong>User:</strong> {{ log.user_message }}
+      </div>
+      <div class="log-assistant">
+        <strong>Assistant:</strong> {{ log.assistant_response.substring(0, 200) }}{{ log.assistant_response.length > 200 ? '...' : '' }}
+      </div>
+    </div>
+    <div class="log-meta">
+      <span>Model: {{ log.model_used || 'fallback' }}</span>
+      <span>Tokens: {{ log.tokens_used }}</span>
+      <span>Latency: {{ log.latency_ms }}ms</span>
+      <span>Prompt: v{{ log.system_prompt_version }}</span>
+    </div>
+    <div class="log-tools" *ngIf="log.tools_used?.length">
+      <strong>Tools used:</strong>
+      <span class="tool-tag" *ngFor="let tool of log.tools_used">{{ tool.name }}</span>
+    </div>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && logs.length === 0">
+    No interactions logged yet. Start a conversation in the Chat tab.
+  </div>
+</div>

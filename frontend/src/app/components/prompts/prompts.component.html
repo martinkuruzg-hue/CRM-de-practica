@@ -1,0 +1,30 @@
+<div class="prompts-container">
+  <h2>System Prompts (Versioned)</h2>
+  <p class="subtitle">Version-controlled system prompts. Changes are tracked and versions can be activated/deactivated.</p>
+
+  <div class="loading-state" *ngIf="loading">Loading prompts...</div>
+
+  <div class="prompt-card" *ngFor="let prompt of prompts">
+    <div class="prompt-header">
+      <span class="prompt-version">v{{ prompt.version }}</span>
+      <span class="prompt-name">{{ prompt.name }}</span>
+      <span class="prompt-status" [class.active]="prompt.is_active" [class.inactive]="!prompt.is_active">
+        {{ prompt.is_active ? 'Active' : 'Inactive' }}
+      </span>
+    </div>
+    <div class="prompt-content">
+      <pre>{{ prompt.content }}</pre>
+    </div>
+    <div class="prompt-meta" *ngIf="prompt.changelog">
+      <strong>Changelog:</strong> {{ prompt.changelog }}
+    </div>
+    <div class="prompt-dates">
+      <span>Created: {{ prompt.created_at | date:'medium' }}</span>
+      <span>Updated: {{ prompt.updated_at | date:'medium' }}</span>
+    </div>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && prompts.length === 0">
+    No system prompts defined yet. Create one in the Django admin.
+  </div>
+</div>

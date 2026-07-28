@@ -1,0 +1,92 @@
+.opportunities-container {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+h2 {
+  margin: 0 0 4px;
+  color: #1a1a2e;
+}
+
+.subtitle {
+  color: #666;
+  margin: 0 0 24px;
+  font-size: 0.9rem;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+th {
+  text-align: left;
+  padding: 12px 16px;
+  background: #1a1a2e;
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.9rem;
+}
+
+tr:hover td {
+  background: #f8f8ff;
+}
+
+.cell-name {
+  font-weight: 600;
+  color: #0f3460;
+}
+
+.cell-value {
+  font-family: monospace;
+  text-align: right;
+}
+
+.stage-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.stage-prospecting { background: #e0e7ff; color: #3730a3; }
+.stage-qualification { background: #fef3c7; color: #92400e; }
+.stage-proposal { background: #dbeafe; color: #1e40af; }
+.stage-negotiation { background: #ede9fe; color: #5b21b6; }
+.stage-won { background: #d1fae5; color: #065f46; }
+.stage-lost { background: #fee2e2; color: #991b1b; }
+
+.priority-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.priority-low { background: #f3f4f6; color: #6b7280; }
+.priority-medium { background: #dbeafe; color: #1e40af; }
+.priority-high { background: #fef3c7; color: #92400e; }
+.priority-critical { background: #fee2e2; color: #991b1b; }
+
+.loading-state, .empty-state {
+  text-align: center;
+  padding: 48px;
+  color: #888;
+}

@@ -1,0 +1,57 @@
+<div class="chat-container">
+  <div class="chat-sidebar">
+    <h3>Assistant CRM</h3>
+    <div class="sidebar-section">
+      <label>System Prompt</label>
+      <select [(ngModel)]="selectedPromptVersion">
+        <option value="">Default</option>
+        <option *ngFor="let p of systemPrompts" [value]="p.version">
+          v{{ p.version }} - {{ p.name }}
+        </option>
+      </select>
+    </div>
+    <div class="sidebar-section">
+      <button class="btn-new" (click)="newConversation()">+ New Conversation</button>
+    </div>
+    <div class="sidebar-info" *ngIf="lastHallucinationCheck">
+      <h4>Last Response Info</h4>
+      <p>Tokens: {{ lastTokensUsed }} | Latency: {{ lastLatencyMs }}ms</p>
+      <p>Hallucination Score: {{ lastHallucinationCheck.score }}</p>
+      <p [class.safe]="lastHallucinationCheck.is_safe" [class.unsafe]="!lastHallucinationCheck.is_safe">
+        {{ lastHallucinationCheck.is_safe ? 'Safe' : 'Warnings!' }}
+      </p>
+    </div>
+  </div>
+
+  <div class="chat-main">
+    <div class="messages" #messageContainer>
+      <div *ngFor="let msg of messages; let i = index" class="message" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
+        <div class="message-header">{{ msg.role === 'user' ? 'You' : 'AI Assistant' }}</div>
+        <div class="message-content">{{ msg.content }}</div>
+        <div class="message-meta" *ngIf="msg.tool_name">
+          <small>Tools: {{ msg.tool_name }}</small>
+        </div>
+        <div class="message-eval" *ngIf="msg.role === 'assistant' && !msg.evaluation">
+          <button class="eval-btn" (click)="evaluate(i, true)" title="Helpful">👍</button>
+          <button class="eval-btn" (click)="evaluate(i, false)" title="Not helpful">👎</button>
+        </div>
+        <div class="message-eval" *ngIf="msg.evaluation">
+          <small>Thanks for your feedback!</small>
+        </div>
+      </div>
+      <div class="loading" *ngIf="loading">
+        <span>Thinking</span><span class="dots"></span>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <input
+        [(ngModel)]="userInput"
+        (keyup.enter)="sendMessage()"
+        placeholder="Ask about your CRM opportunities..."
+        [disabled]="loading"
+      />
+      <button (click)="sendMessage()" [disabled]="loading">Send</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,106 @@
+.logs-container {
+  padding: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+h2 {
+  margin: 0 0 4px;
+  color: #1a1a2e;
+}
+
+.subtitle {
+  color: #666;
+  margin: 0 0 24px;
+  font-size: 0.9rem;
+}
+
+.log-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.log-header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.log-time {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.log-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.rag-yes {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.log-badge:not(.rag-yes) {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.hallucination.safe {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.hallucination.unsafe {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.log-messages {
+  margin-bottom: 12px;
+}
+
+.log-user {
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+}
+
+.log-assistant {
+  font-size: 0.9rem;
+}
+
+.log-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 0.75rem;
+  color: #888;
+  flex-wrap: wrap;
+}
+
+.log-tools {
+  margin-top: 8px;
+  font-size: 0.85rem;
+}
+
+.tool-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #ede9fe;
+  color: #5b21b6;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  margin-left: 6px;
+}
+
+.loading-state, .empty-state {
+  text-align: center;
+  padding: 48px;
+  color: #888;
+}
