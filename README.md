@@ -33,3 +33,8 @@ ng serve --proxy-config proxy.conf.json
 ```
 
 El frontend corre en `http://localhost:4200`.
+
+
+
+```base de datos sqlite dentro del backend
+```
