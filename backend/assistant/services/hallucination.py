@@ -18,8 +18,8 @@ class HallucinationController:
             r'(probability|probabilidad|porcentaje)\s*(?:de\s*)?(?:is|:)?\s*(\d+)%',
             r'(stage|etapa)\s*(?:is|:)?\s*["\']?(\w+)["\']?',
             r'(priority|prioridad)\s*(?:is|:)?\s*["\']?(\w+)["\']?',
-            r'(company|empresa)\s*["\']?([^"\'.,]+)["\']?',
-            r'(contact|contacto)\s*["\']?([^"\'.,]+)["\']?',
+            r'\b(company|empresa)\b\s*[:=]?\s*["\']?([^"\'.,\n]+)["\']?',
+            r'\b(contact|contacto)\b\s*[:=]?\s*["\']?([^"\'.,\n]+)["\']?',
         ]
         for pattern in patterns:
             matches = re.findall(pattern, text, re.IGNORECASE)
@@ -66,7 +66,7 @@ class HallucinationController:
 
     def add_hallucination_guard(self, response_text):
         guard = (
-            '\n\n[AI Note: The above information is based on CRM data available at the time of response. '
-            'For critical decisions, please verify directly with the relevant contact or system.]'
+            '\n\n[Nota IA: La información anterior se basa en los datos del CRM disponibles al momento '
+            'de la respuesta. Para decisiones críticas, verifique directamente con el contacto o el sistema.]'
         )
         return response_text + guard

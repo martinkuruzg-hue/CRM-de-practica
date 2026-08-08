@@ -1,0 +1,19 @@
+# Entorno / secretos
+.env
+*.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Base de datos local
+backend/db.sqlite3
+*.sqlite3
+
+# Datos temporales / ejemplos del repo
+notebooks/
+transformer_northwind.pkl
+*.pkl
+instnwnd*.sql

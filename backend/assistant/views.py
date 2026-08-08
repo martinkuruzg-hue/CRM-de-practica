@@ -73,7 +73,7 @@ def chat(request):
     system_prompt_obj = get_active_system_prompt(prompt_version)
     system_content = system_prompt_obj.content if system_prompt_obj else SYSTEM_PROMPT_TEMPLATE
 
-    memory.add_message(conv, 'user', user_message)
+    user_msg_obj = memory.add_message(conv, 'user', user_message)
 
     rag_results = rag.search(user_message)
     rag_context = rag.format_context(rag_results)
@@ -99,6 +99,7 @@ def chat(request):
     llm_response, tool_calls, tokens_used = llm.chat(messages_for_llm, tools=tool_defs)
 
     tools_used_info = []
+    tool_results_texts = []
     if tool_calls:
         tool_results_messages = []
         for tc in tool_calls:
@@ -118,8 +119,9 @@ def chat(request):
                 'name': fn_name,
                 'arguments': fn_args,
             })
+            tool_results_texts.append(result)
 
-            hc.set_source_context(rag_context, [result])
+            hc.set_source_context(rag_context, tool_results_texts)
 
         messages_for_llm_tools = messages_for_llm.copy()
         messages_for_llm_tools.append({
@@ -145,13 +147,13 @@ def chat(request):
             llm_response = llm_response2
 
     if not llm_response:
-        llm_response = "I can help you manage your CRM opportunities. What would you like to know?"
+        llm_response = "Puedo ayudarte a gestionar las oportunidades del CRM. ¿Qué te gustaría consultar?"
 
-    hallucination_check = hc.evaluate(llm_response, rag_context, [t['arguments'] for t in tools_used_info])
-    if hallucination_check['warnings']:
+    hallucination_check = hc.evaluate(llm_response, rag_context, tool_results_texts)
+    if tools_used_info and hallucination_check['warnings']:
         llm_response = hc.add_hallucination_guard(llm_response)
 
-    memory.add_message(conv, 'assistant', llm_response)
+    assistant_msg_obj = memory.add_message(conv, 'assistant', llm_response)
 
     if not conv.title and len(user_message) > 10:
         conv.title = user_message[:80] + ('...' if len(user_message) > 80 else '')
@@ -174,6 +176,8 @@ def chat(request):
         'conversation_id': conv.id,
         'user_message': user_message,
         'assistant_response': llm_response,
+        'user_message_id': str(user_msg_obj.id),
+        'assistant_message_id': str(assistant_msg_obj.id),
         'tools_used': tools_used_info,
         'rag_context_used': bool(rag_results),
         'hallucination_check': hallucination_check,

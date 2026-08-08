@@ -12,6 +12,8 @@ export interface ChatResponse {
   conversation_id: string;
   user_message: string;
   assistant_response: string;
+  user_message_id: string;
+  assistant_message_id: string;
   tools_used: any[];
   rag_context_used: boolean;
   hallucination_check: { score: number; warnings: string[]; is_safe: boolean };

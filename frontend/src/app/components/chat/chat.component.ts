@@ -13,7 +13,7 @@ import { ChatService, ChatResponse, SystemPrompt } from '../../services/chat.ser
 export class ChatComponent implements OnInit {
   private chatService = inject(ChatService);
 
-  messages: { role: string; content: string; tool_name?: string; evaluation?: boolean }[] = [];
+  messages: { role: string; content: string; tool_name?: string; evaluation?: boolean; id?: string }[] = [];
   userInput = '';
   loading = false;
   conversationId = '';
@@ -51,7 +51,11 @@ export class ChatComponent implements OnInit {
       .subscribe({
         next: (res: ChatResponse) => {
           this.conversationId = res.conversation_id;
-          this.messages.push({ role: 'assistant', content: res.assistant_response });
+          this.messages.push({
+            role: 'assistant',
+            content: res.assistant_response,
+            id: res.assistant_message_id,
+          });
           this.lastHallucinationCheck = res.hallucination_check;
           this.lastTokensUsed = res.tokens_used;
           this.lastLatencyMs = res.latency_ms;
@@ -75,8 +79,10 @@ export class ChatComponent implements OnInit {
   }
 
   evaluate(messageIndex: number, isHelpful: boolean) {
-    this.chatService.submitEvaluation({ message_id: '', is_helpful: isHelpful }).subscribe();
-    this.messages[messageIndex].evaluation = true;
+    const msg = this.messages[messageIndex];
+    if (!msg.id) return;
+    this.chatService.submitEvaluation({ message_id: msg.id, is_helpful: isHelpful }).subscribe();
+    msg.evaluation = true;
   }
 
   newConversation() {

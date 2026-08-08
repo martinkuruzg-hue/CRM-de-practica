@@ -4,37 +4,38 @@ from django.db import models
 
 class Opportunity(models.Model):
     STAGE_CHOICES = [
-        ('prospecting', 'Prospecting'),
-        ('qualification', 'Qualification'),
-        ('proposal', 'Proposal'),
-        ('negotiation', 'Negotiation'),
-        ('closed_won', 'Closed Won'),
-        ('closed_lost', 'Closed Lost'),
+        ('Lead nuevo', 'Lead nuevo'),
+        ('Contactado', 'Contactado'),
+        ('Diagnóstico', 'Diagnóstico'),
+        ('Propuesta enviada', 'Propuesta enviada'),
+        ('Negociación', 'Negociación'),
+        ('Ganado', 'Ganado'),
+        ('Perdido', 'Perdido'),
     ]
     PRIORITY_CHOICES = [
-        ('low', 'Low'),
-        ('medium', 'Medium'),
-        ('high', 'High'),
-        ('critical', 'Critical'),
+        ('Baja', 'Baja'),
+        ('Media', 'Media'),
+        ('Alta', 'Alta'),
+        ('Crítica', 'Crítica'),
     ]
 
-    id = models.CharField(max_length=36, primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     company_name = models.CharField(max_length=255)
     contact_name = models.CharField(max_length=255)
     contact_email = models.EmailField()
     opportunity_name = models.CharField(max_length=255)
     description = models.TextField(blank=True, default='')
     estimated_value = models.FloatField(default=0.0)
-    currency = models.CharField(max_length=3, default='USD')
-    stage = models.CharField(max_length=20, choices=STAGE_CHOICES, default='prospecting')
-    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
-    probability = models.FloatField(default=0.0)
+    currency = models.CharField(max_length=10, default='USD')
+    stage = models.CharField(max_length=30, choices=STAGE_CHOICES, default='Lead nuevo')
+    priority = models.CharField(max_length=15, choices=PRIORITY_CHOICES, default='Media')
+    probability = models.IntegerField(default=0)
     owner = models.CharField(max_length=255, blank=True, default='')
-    next_follow_up_date = models.CharField(max_length=10, blank=True, default='')
+    next_follow_up_date = models.DateField(null=True, blank=True)
     last_interaction_summary = models.TextField(blank=True, default='')
     ai_recommendation = models.TextField(blank=True, default='')
-    created_at = models.CharField(max_length=19, blank=True, default='')
-    updated_at = models.CharField(max_length=19, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
 
     class Meta:

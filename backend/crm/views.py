@@ -1,10 +1,11 @@
+from datetime import date, timedelta
+from django.db.models import Q
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.db.models import Q
 
 from .models import Opportunity
-from .serializers import OpportunitySerializer
+from .serializers import OpportunitySerializer, OpportunitySummarySerializer
 
 
 class OpportunityViewSet(viewsets.ModelViewSet):
@@ -13,25 +14,81 @@ class OpportunityViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        is_active = self.request.query_params.get('is_active')
+        params = self.request.query_params
+
+        is_active = params.get('is_active')
         if is_active is not None:
             qs = qs.filter(is_active=is_active.lower() in ('true', '1'))
+
+        stage = params.get('stage')
+        if stage:
+            qs = qs.filter(stage=stage)
+
+        priority = params.get('priority')
+        if priority:
+            qs = qs.filter(priority=priority)
+
+        owner = params.get('owner')
+        if owner:
+            qs = qs.filter(owner__icontains=owner)
+
+        search = params.get('search')
+        if search:
+            qs = qs.filter(
+                Q(company_name__icontains=search)
+                | Q(contact_name__icontains=search)
+                | Q(opportunity_name__icontains=search)
+            )
+
         return qs
 
     def perform_destroy(self, instance):
         instance.is_active = False
-        from datetime import datetime
-        instance.updated_at = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         instance.save()
 
-    @action(detail=False, methods=['delete'], url_path='hard-delete/(?P<pk>[^/]+)')
-    def hard_delete(self, request, pk=None):
-        try:
-            instance = Opportunity.objects.get(pk=pk)
-            instance.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except Opportunity.DoesNotExist:
-            return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
+    @action(detail=False, methods=['get'], url_path='stats')
+    def stats(self, request):
+        qs = Opportunity.objects.filter(is_active=True)
+
+        by_stage = {}
+        by_priority = {}
+        by_owner = {}
+
+        for opp in qs:
+            by_stage.setdefault(opp.stage, {'count': 0, 'value': 0.0})
+            by_stage[opp.stage]['count'] += 1
+            by_stage[opp.stage]['value'] += opp.estimated_value
+
+            by_priority.setdefault(opp.priority, {'count': 0, 'value': 0.0})
+            by_priority[opp.priority]['count'] += 1
+            by_priority[opp.priority]['value'] += opp.estimated_value
+
+            owner_key = opp.owner or 'Sin asignar'
+            by_owner.setdefault(owner_key, {'count': 0, 'value': 0.0})
+            by_owner[owner_key]['count'] += 1
+            by_owner[owner_key]['value'] += opp.estimated_value
+
+        today = date.today()
+        week_end = today + timedelta(days=7)
+        follow_up_this_week = qs.filter(
+            next_follow_up_date__gte=today,
+            next_follow_up_date__lte=week_end,
+        ).exclude(stage='Ganado').exclude(stage='Perdido').count()
+
+        won_value = sum(
+            opp.estimated_value for opp in qs if opp.stage == 'Ganado'
+        )
+
+        data = {
+            'total_opportunities': qs.count(),
+            'total_pipeline_value': sum(o.estimated_value for o in qs),
+            'won_value': won_value,
+            'by_stage': by_stage,
+            'by_priority': by_priority,
+            'by_owner': by_owner,
+            'follow_up_this_week': follow_up_this_week,
+        }
+        return Response(OpportunitySummarySerializer(data).data)
 
     @action(detail=True, methods=['post'], url_path='ai')
     def ai_interact(self, request, pk=None):
@@ -41,46 +98,50 @@ class OpportunityViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
 
         user_message = request.data.get('message', '')
-
         recommendation = self._generate_ai_recommendation(opportunity, user_message)
 
         opportunity.ai_recommendation = recommendation
-        from datetime import datetime
-        opportunity.updated_at = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         opportunity.save()
 
         return Response({
-            'opportunity_id': opportunity.id,
+            'opportunity_id': str(opportunity.id),
             'user_message': user_message,
             'ai_response': recommendation,
         })
 
     def _generate_ai_recommendation(self, opp, user_message):
-        value = opp.estimated_value
-        stage = opp.stage
-        priority = opp.priority
-        probability = opp.probability
-
         base = (
-            f"Opportunity '{opp.opportunity_name}' for {opp.company_name} "
-            f"(Stage: {stage}, Priority: {priority}, Value: {value} {opp.currency}, "
-            f"Probability: {probability}%)."
+            f"Oportunidad '{opp.opportunity_name}' para {opp.company_name} "
+            f"(Etapa: {opp.stage}, Prioridad: {opp.priority}, Valor: {opp.estimated_value:,.0f} {opp.currency}, "
+            f"Probabilidad: {opp.probability}%)."
         )
 
         if user_message:
+            action = (
+                "priorizar el seguimiento"
+                if opp.priority in ('Alta', 'Crítica')
+                else "nutrir la relación comercial"
+            )
+            next_step = (
+                "Agendar demo o reunión de propuesta."
+                if opp.stage in ('Lead nuevo', 'Contactado', 'Diagnóstico')
+                else "Preparar términos finales y cerrar."
+                if opp.stage == 'Negociación'
+                else "Revisar y optimizar estrategia."
+            )
             return (
                 f"{base}\n"
-                f"User query: {user_message}\n\n"
-                f"AI Suggestion: Based on the current stage '{stage}' and a {probability}% probability, "
-                f"consider {'prioritizing follow-up' if priority in ('high', 'critical') else 'nurturing the lead'}.\n"
-                f"Recommended action: {'Schedule a demo or proposal meeting.' if stage in ('prospecting', 'qualification') else 'Prepare final terms and close.' if stage == 'negotiation' else 'Review and optimize strategy.'}"
+                f"Consulta del usuario: {user_message}\n\n"
+                f"Sugerencia IA: según la etapa '{opp.stage}' y una probabilidad del {opp.probability}%, "
+                f"considere {action}.\n"
+                f"Acción recomendada: {next_step}"
             )
 
-        if probability < 30:
-            action = "Increase engagement with targeted content."
-        elif probability < 60:
-            action = "Schedule a follow-up meeting to address concerns."
+        if opp.probability < 30:
+            action = "Aumentar engagement con contenido específico."
+        elif opp.probability < 60:
+            action = "Agendar reunión de seguimiento para resolver inquietudes."
         else:
-            action = "Prepare contract and move to closing."
+            action = "Preparar contrato y avanzar al cierre."
 
-        return f"{base}\nAI Recommendation: {action}"
+        return f"{base}\nRecomendación IA: {action}"

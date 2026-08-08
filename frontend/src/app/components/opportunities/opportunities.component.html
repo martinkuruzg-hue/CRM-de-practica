@@ -1,26 +1,87 @@
 <div class="opportunities-container">
-  <h2>CRM Opportunities</h2>
-  <p class="subtitle">Data source for the AI assistant - used by RAG and Tool Calling features.</p>
+  <div class="header">
+    <div>
+      <h2>Oportunidades comerciales</h2>
+      <p class="subtitle">CRM de seguimiento comercial con asistente de IA integrado.</p>
+    </div>
+    <button class="btn btn-primary" (click)="openCreate()">+ Nueva oportunidad</button>
+  </div>
 
-  <div class="loading-state" *ngIf="loading">Loading opportunities...</div>
+  <!-- Dashboard -->
+  <div class="stats-grid" *ngIf="stats">
+    <div class="stat-card">
+      <span class="stat-label">Valor total pipeline</span>
+      <span class="stat-value">${{ stats.total_pipeline_value | number:'1.0-0' }}</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Oportunidades activas</span>
+      <span class="stat-value">{{ stats.total_opportunities }}</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Seguimientos esta semana</span>
+      <span class="stat-value">{{ stats.follow_up_this_week }}</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Valor ganado</span>
+      <span class="stat-value">${{ stats.won_value | number:'1.0-0' }}</span>
+    </div>
+  </div>
+
+  <div class="stage-summary" *ngIf="stats">
+    <span class="stage-chip" *ngFor="let item of stats.by_stage | keyvalue">
+      {{ item.key }}: {{ item.value.count }} · ${{ item.value.value | number:'1.0-0' }}
+    </span>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <input
+      type="text"
+      [(ngModel)]="filters.search"
+      (ngModelChange)="onFilterChange()"
+      placeholder="Buscar por empresa, contacto, responsable..."
+      class="filter-search"
+    />
+    <select [(ngModel)]="filters.stage" (ngModelChange)="onFilterChange()">
+      <option value="">Etapa: todas</option>
+      <option *ngFor="let s of stages" [value]="s">{{ s }}</option>
+    </select>
+    <select [(ngModel)]="filters.priority" (ngModelChange)="onFilterChange()">
+      <option value="">Prioridad: todas</option>
+      <option *ngFor="let p of priorities" [value]="p">{{ p }}</option>
+    </select>
+    <select [(ngModel)]="filters.owner" (ngModelChange)="onFilterChange()">
+      <option value="">Responsable: todos</option>
+      <option *ngFor="let o of owners" [value]="o">{{ o }}</option>
+    </select>
+    <button class="btn btn-ghost" (click)="resetFilters()">Limpiar filtros</button>
+  </div>
+
+  <div class="error" *ngIf="error">{{ error }}</div>
+
+  <div class="loading-state" *ngIf="loading">Cargando oportunidades...</div>
 
   <div class="table-wrapper" *ngIf="!loading">
     <table>
       <thead>
         <tr>
-          <th>Opportunity</th>
-          <th>Company</th>
-          <th>Contact</th>
-          <th>Stage</th>
-          <th>Priority</th>
-          <th>Value</th>
-          <th>Probability</th>
-          <th>Owner</th>
+          <th>Oportunidad</th>
+          <th>Empresa</th>
+          <th>Contacto</th>
+          <th>Etapa</th>
+          <th>Prioridad</th>
+          <th>Valor</th>
+          <th>Probabilidad</th>
+          <th>Responsable</th>
+          <th>Seguimiento</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let opp of opportunities">
-          <td class="cell-name">{{ opp.opportunity_name }}</td>
+        <tr *ngFor="let opp of filtered">
+          <td class="cell-name" (click)="openDetail(opp)" style="cursor: pointer">
+            {{ opp.opportunity_name }}
+          </td>
           <td>{{ opp.company_name }}</td>
           <td>{{ opp.contact_name }}</td>
           <td>
@@ -32,12 +93,166 @@
           <td class="cell-value">{{ opp.estimated_value | number:'1.0-0' }} {{ opp.currency }}</td>
           <td>{{ opp.probability }}%</td>
           <td>{{ opp.owner || '—' }}</td>
+          <td>{{ formatDate(opp.next_follow_up_date) }}</td>
+          <td class="cell-actions">
+            <button class="btn-icon" (click)="openDetail(opp)" title="Ver detalle">👁</button>
+            <button class="btn-icon" (click)="openEdit(opp)" title="Editar">✏️</button>
+            <button class="btn-icon danger" (click)="confirmDelete(opp)" title="Desactivar">🗑</button>
+          </td>
         </tr>
       </tbody>
     </table>
   </div>
 
-  <div class="empty-state" *ngIf="!loading && opportunities.length === 0">
-    No opportunities found. Add some through the Django admin.
+  <div class="empty-state" *ngIf="!loading && filtered.length === 0">
+    No hay oportunidades que coincidan con los filtros.
+  </div>
+</div>
+
+<!-- Detail modal -->
+<div class="modal-overlay" *ngIf="showDetailModal" (click)="closeModals()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Detalle de oportunidad</h3>
+      <button class="btn-icon" (click)="closeModals()">✕</button>
+    </div>
+    <div class="modal-body" *ngIf="selected">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span class="detail-label">Oportunidad</span>
+          <span class="detail-value">{{ selected.opportunity_name }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Empresa</span>
+          <span class="detail-value">{{ selected.company_name }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Contacto</span>
+          <span class="detail-value">{{ selected.contact_name }} · {{ selected.contact_email }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Etapa</span>
+          <span class="detail-value">
+            <span class="stage-badge {{ stageClass(selected.stage) }}">{{ selected.stage }}</span>
+          </span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Prioridad</span>
+          <span class="detail-value">
+            <span class="priority-badge {{ priorityClass(selected.priority) }}">{{ selected.priority }}</span>
+          </span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Valor estimado</span>
+          <span class="detail-value">${{ selected.estimated_value | number:'1.0-0' }} {{ selected.currency }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Probabilidad de cierre</span>
+          <span class="detail-value">{{ selected.probability }}%</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Responsable</span>
+          <span class="detail-value">{{ selected.owner || '—' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Próximo seguimiento</span>
+          <span class="detail-value">{{ formatDate(selected.next_follow_up_date) }}</span>
+        </div>
+        <div class="detail-item full">
+          <span class="detail-label">Descripción</span>
+          <span class="detail-value">{{ selected.description || '—' }}</span>
+        </div>
+        <div class="detail-item full">
+          <span class="detail-label">Última interacción</span>
+          <span class="detail-value">{{ selected.last_interaction_summary || '—' }}</span>
+        </div>
+        <div class="detail-item full">
+          <span class="detail-label">Recomendación IA</span>
+          <span class="detail-value">{{ selected.ai_recommendation || '—' }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="openEdit(selected!)">Editar</button>
+      <button class="btn btn-primary" (click)="closeModals()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create / Edit modal -->
+<div class="modal-overlay" *ngIf="showFormModal">
+  <div class="modal modal-form">
+    <div class="modal-header">
+      <h3>{{ editing ? 'Editar oportunidad' : 'Nueva oportunidad' }}</h3>
+      <button class="btn-icon" (click)="closeModals()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <label class="form-field full">
+          <span>Empresa *</span>
+          <input type="text" [(ngModel)]="form.company_name" required />
+        </label>
+        <label class="form-field">
+          <span>Oportunidad *</span>
+          <input type="text" [(ngModel)]="form.opportunity_name" required />
+        </label>
+        <label class="form-field">
+          <span>Contacto</span>
+          <input type="text" [(ngModel)]="form.contact_name" />
+        </label>
+        <label class="form-field">
+          <span>Email</span>
+          <input type="email" [(ngModel)]="form.contact_email" />
+        </label>
+        <label class="form-field">
+          <span>Valor estimado</span>
+          <input type="number" [(ngModel)]="form.estimated_value" min="0" />
+        </label>
+        <label class="form-field">
+          <span>Moneda</span>
+          <select [(ngModel)]="form.currency">
+            <option *ngFor="let c of currencies" [value]="c">{{ c }}</option>
+          </select>
+        </label>
+        <label class="form-field">
+          <span>Etapa</span>
+          <select [(ngModel)]="form.stage">
+            <option *ngFor="let s of stages" [value]="s">{{ s }}</option>
+          </select>
+        </label>
+        <label class="form-field">
+          <span>Prioridad</span>
+          <select [(ngModel)]="form.priority">
+            <option *ngFor="let p of priorities" [value]="p">{{ p }}</option>
+          </select>
+        </label>
+        <label class="form-field">
+          <span>Probabilidad (%)</span>
+          <input type="number" [(ngModel)]="form.probability" min="0" max="100" />
+        </label>
+        <label class="form-field">
+          <span>Responsable</span>
+          <input type="text" [(ngModel)]="form.owner" />
+        </label>
+        <label class="form-field">
+          <span>Próximo seguimiento</span>
+          <input type="date" [(ngModel)]="form.next_follow_up_date" />
+        </label>
+        <label class="form-field full">
+          <span>Descripción</span>
+          <textarea [(ngModel)]="form.description" rows="2"></textarea>
+        </label>
+        <label class="form-field full">
+          <span>Última interacción</span>
+          <textarea [(ngModel)]="form.last_interaction_summary" rows="2"></textarea>
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeModals()">Cancelar</button>
+      <button class="btn btn-primary" (click)="saveOpportunity()" [disabled]="saving || !form.company_name || !form.opportunity_name">
+        {{ saving ? 'Guardando...' : 'Guardar' }}
+      </button>
+    </div>
   </div>
 </div>

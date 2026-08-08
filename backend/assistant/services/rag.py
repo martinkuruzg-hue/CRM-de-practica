@@ -22,13 +22,15 @@ class RAGService:
 
         query_lower = query_tokens
 
-        if query_lower & {'high', 'critical'} and opp.priority in ('high', 'critical'):
+        if query_lower & {'alta', 'critica', 'crítica', 'urgente'} and opp.priority in ('Alta', 'Crítica'):
             score += 5.0
-        if query_lower & {'closed', 'won', 'lost'} and opp.stage in ('closed_won', 'closed_lost'):
+        if query_lower & {'ganado', 'perdido', 'cerrado'} and opp.stage in ('Ganado', 'Perdido'):
             score += 5.0
-        if query_lower & {'prospecting', 'qualification', 'proposal', 'negotiation'}:
-            if opp.stage in query_lower:
-                score += 5.0
+        if query_lower & {'lead', 'contactado', 'diagnóstico', 'diagnostico', 'propuesta', 'negociacion', 'negociación'}:
+            stage_lower = opp.stage.lower()
+            for term in query_lower:
+                if term in stage_lower or stage_lower in term:
+                    score += 5.0
 
         value_terms = {'gran', 'alto', 'valioso', 'importante', 'grande'}
         if value_terms & query_lower:

@@ -1,179 +1,156 @@
 import uuid
-from datetime import datetime, timedelta
+from datetime import date, timedelta
 from django.core.management.base import BaseCommand
 from crm.models import Opportunity
+from assistant.models import SystemPrompt
+
+
+SYSTEM_PROMPT_V1 = """Eres un asistente experto en CRM para seguimiento comercial de proyectos de IA.
+
+Tus capacidades:
+1. Buscar y consultar oportunidades en el CRM.
+2. Obtener detalles completos de oportunidades.
+3. Actualizar el estado de oportunidades.
+4. Proporcionar resúmenes y análisis del pipeline.
+5. Listar oportunidades con seguimiento pendiente.
+
+Siempre debes:
+- Usar las herramientas disponibles cuando sea relevante.
+- Basar tus respuestas EXCLUSIVAMENTE en datos reales del CRM.
+- Indicar claramente cuando no tienes información suficiente.
+- No inventar empresas, montos ni etapas que no aparezcan en el contexto.
+- Responder en español, ser conciso y profesional.
+- Explicar brevemente de dónde obtienes tus respuestas (ej: "según el CRM...").
+
+Preguntas fuera del alcance del CRM: responde que solo puedes
+ayudar con información comercial del CRM y ofrece opciones de consulta.
+
+Contexto actual del CRM:
+{rag_context}
+
+Historial relevante:
+{history_summary}"""
 
 
 class Command(BaseCommand):
-    help = 'Seed the database with sample opportunities'
+    help = 'Carga datos semilla de oportunidades (5 ejemplos de la prueba técnica)'
 
     def handle(self, *args, **options):
-        now = datetime.utcnow()
+        today = date.today()
+
+        def oid(name):
+            return uuid.uuid5(uuid.NAMESPACE_DNS, f'crm-seed:{name}')
 
         data = [
             {
-                'id': str(uuid.uuid4()),
-                'company_name': 'TechCorp Solutions',
-                'contact_name': 'Alice Johnson',
-                'contact_email': 'alice@techcorp.com',
-                'opportunity_name': 'Enterprise Cloud Migration',
-                'description': 'Full migration of on-premise infrastructure to AWS.',
-                'estimated_value': 250000.0,
+                'id': oid('Banco Andino'),
+                'company_name': 'Banco Andino',
+                'contact_name': 'Laura Pérez',
+                'contact_email': 'laura.perez@bancoandino.com',
+                'opportunity_name': 'Asistente IA para atención interna',
+                'description': 'Implementación de un asistente de IA para consultas internas sobre políticas, procesos y documentos.',
+                'estimated_value': 85000.0,
                 'currency': 'USD',
-                'stage': 'negotiation',
-                'priority': 'high',
-                'probability': 75.0,
-                'owner': 'Carlos Ruiz',
-                'next_follow_up_date': (now + timedelta(days=3)).strftime('%Y-%m-%d'),
-                'last_interaction_summary': 'Discussed pricing tiers and SLA terms.',
-                'ai_recommendation': 'Prepare final contract and schedule closing meeting.',
-                'created_at': (now - timedelta(days=14)).strftime('%Y-%m-%d %H:%M:%S'),
-                'updated_at': (now - timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S'),
+                'stage': 'Diagnóstico',
+                'priority': 'Alta',
+                'probability': 65,
+                'owner': 'LABS IA',
+                'next_follow_up_date': today + timedelta(days=2),
+                'last_interaction_summary': 'Cliente solicitó revisar alcance técnico y modelo de seguridad.',
+                'ai_recommendation': 'Priorizar levantamiento de restricciones de datos y arquitectura cloud/local.',
                 'is_active': True,
             },
             {
-                'id': str(uuid.uuid4()),
-                'company_name': 'GreenLeaf Analytics',
-                'contact_name': 'Bob Martinez',
-                'contact_email': 'bob@greenleaf.io',
-                'opportunity_name': 'Data Platform Implementation',
-                'description': 'Deploy analytics dashboard and data warehouse.',
-                'estimated_value': 180000.0,
+                'id': oid('Retail Nova'),
+                'company_name': 'Retail Nova',
+                'contact_name': 'Carlos Ríos',
+                'contact_email': 'carlos.rios@retailnova.com',
+                'opportunity_name': 'Automatización de seguimiento comercial con IA',
+                'description': 'Sistema para registrar oportunidades, generar recordatorios y sugerir acciones comerciales.',
+                'estimated_value': 42000.0,
                 'currency': 'USD',
-                'stage': 'proposal',
-                'priority': 'medium',
-                'probability': 50.0,
-                'owner': 'Diana Park',
-                'next_follow_up_date': (now + timedelta(days=7)).strftime('%Y-%m-%d'),
-                'last_interaction_summary': 'Presented the proposal; client requested minor changes.',
-                'ai_recommendation': 'Address feedback and send revised proposal.',
-                'created_at': (now - timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S'),
-                'updated_at': (now - timedelta(days=5)).strftime('%Y-%m-%d %H:%M:%S'),
+                'stage': 'Propuesta enviada',
+                'priority': 'Media',
+                'probability': 55,
+                'owner': 'LABS IA',
+                'next_follow_up_date': today + timedelta(days=5),
+                'last_interaction_summary': 'Se envió propuesta inicial y se espera feedback del área de innovación.',
+                'ai_recommendation': 'Enviar caso de uso comparable y reforzar beneficios de eficiencia.',
                 'is_active': True,
             },
             {
-                'id': str(uuid.uuid4()),
-                'company_name': 'BlueOcean Retail',
-                'contact_name': 'Carol Chen',
-                'contact_email': 'carol@blueoceanretail.com',
-                'opportunity_name': 'E-commerce Platform Upgrade',
-                'description': 'Migrate from legacy e-commerce to headless Shopify.',
-                'estimated_value': 320000.0,
+                'id': oid('Minería Horizonte'),
+                'company_name': 'Minería Horizonte',
+                'contact_name': 'Patricia Gómez',
+                'contact_email': 'patricia.gomez@mhorizonte.com',
+                'opportunity_name': 'Modelo predictivo de mantenimiento',
+                'description': 'Proyecto de IA para predecir fallas de maquinaria crítica utilizando datos históricos.',
+                'estimated_value': 120000.0,
                 'currency': 'USD',
-                'stage': 'qualification',
-                'priority': 'critical',
-                'probability': 30.0,
-                'owner': 'Carlos Ruiz',
-                'next_follow_up_date': (now + timedelta(days=1)).strftime('%Y-%m-%d'),
-                'last_interaction_summary': 'Initial discovery call; high interest but budget concerns.',
-                'ai_recommendation': 'Prepare ROI analysis to justify investment.',
-                'created_at': (now - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S'),
-                'updated_at': (now - timedelta(days=2)).strftime('%Y-%m-%d %H:%M:%S'),
+                'stage': 'Negociación',
+                'priority': 'Crítica',
+                'probability': 80,
+                'owner': 'Sebastián Saavedra',
+                'next_follow_up_date': today + timedelta(days=1),
+                'last_interaction_summary': 'Cliente validó alcance técnico y solicitó propuesta económica final.',
+                'ai_recommendation': 'Acelerar cierre comercial y preparar plan de implementación inicial.',
                 'is_active': True,
             },
             {
-                'id': str(uuid.uuid4()),
-                'company_name': 'Sunrise Ventures',
-                'contact_name': 'David Kim',
-                'contact_email': 'david@sunrise.vc',
-                'opportunity_name': 'Portfolio Management Tool',
-                'description': 'Custom SaaS for tracking startup investments.',
-                'estimated_value': 95000.0,
+                'id': oid('Salud Integral'),
+                'company_name': 'Salud Integral',
+                'contact_name': 'Andrés Molina',
+                'contact_email': 'andres.molina@saludintegral.com',
+                'opportunity_name': 'Chatbot clínico interno',
+                'description': 'Asistente conversacional para soporte interno del personal médico y administrativo.',
+                'estimated_value': 65000.0,
                 'currency': 'USD',
-                'stage': 'prospecting',
-                'priority': 'low',
-                'probability': 15.0,
-                'owner': 'Diana Park',
-                'next_follow_up_date': (now + timedelta(days=14)).strftime('%Y-%m-%d'),
-                'last_interaction_summary': 'Cold outreach; interested in a demo.',
-                'ai_recommendation': 'Schedule product demo and share case studies.',
-                'created_at': (now - timedelta(days=2)).strftime('%Y-%m-%d %H:%M:%S'),
-                'updated_at': (now - timedelta(days=2)).strftime('%Y-%m-%d %H:%M:%S'),
+                'stage': 'Contactado',
+                'priority': 'Alta',
+                'probability': 40,
+                'owner': 'LABS IA',
+                'next_follow_up_date': today + timedelta(days=4),
+                'last_interaction_summary': 'Cliente interesado en capacidades de seguridad y compliance.',
+                'ai_recommendation': 'Enviar arquitectura híbrida y enfoque de protección de datos.',
                 'is_active': True,
             },
             {
-                'id': str(uuid.uuid4()),
-                'company_name': 'Pinnacle Health',
-                'contact_name': 'Eva Larson',
-                'contact_email': 'eva@pinnaclehealth.org',
-                'opportunity_name': 'Patient Portal Integration',
-                'description': 'Integrate patient portal with EHR system.',
-                'estimated_value': 410000.0,
+                'id': oid('Logística Global'),
+                'company_name': 'Logística Global',
+                'contact_name': 'María Fernández',
+                'contact_email': 'maria.fernandez@logisticaglobal.com',
+                'opportunity_name': 'Optimización logística con IA',
+                'description': 'Sistema de análisis y recomendación de rutas utilizando modelos de optimización.',
+                'estimated_value': 98000.0,
                 'currency': 'USD',
-                'stage': 'negotiation',
-                'priority': 'high',
-                'probability': 80.0,
-                'owner': 'Carlos Ruiz',
-                'next_follow_up_date': (now + timedelta(days=5)).strftime('%Y-%m-%d'),
-                'last_interaction_summary': 'Final terms agreed pending legal review.',
-                'ai_recommendation': 'Coordinate with legal team and finalize contract.',
-                'created_at': (now - timedelta(days=60)).strftime('%Y-%m-%d %H:%M:%S'),
-                'updated_at': (now - timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S'),
-                'is_active': True,
-            },
-            {
-                'id': str(uuid.uuid4()),
-                'company_name': 'Apex Logistics',
-                'contact_name': 'Frank Torres',
-                'contact_email': 'frank@apexlogistics.com',
-                'opportunity_name': 'Fleet Management System',
-                'description': 'IoT-based fleet tracking and optimization platform.',
-                'estimated_value': 150000.0,
-                'currency': 'EUR',
-                'stage': 'closed_won',
-                'priority': 'medium',
-                'probability': 100.0,
-                'owner': 'Carlos Ruiz',
-                'next_follow_up_date': '',
-                'last_interaction_summary': 'Contract signed; onboarding scheduled.',
-                'ai_recommendation': 'Begin implementation and assign project manager.',
-                'created_at': (now - timedelta(days=90)).strftime('%Y-%m-%d %H:%M:%S'),
-                'updated_at': (now - timedelta(days=10)).strftime('%Y-%m-%d %H:%M:%S'),
-                'is_active': True,
-            },
-            {
-                'id': str(uuid.uuid4()),
-                'company_name': 'Nova Education',
-                'contact_name': 'Grace Huang',
-                'contact_email': 'grace@novaedu.edu',
-                'opportunity_name': 'LMS Migration Project',
-                'description': 'Migrate from Moodle to custom LMS solution.',
-                'estimated_value': 200000.0,
-                'currency': 'USD',
-                'stage': 'closed_lost',
-                'priority': 'low',
-                'probability': 0.0,
-                'owner': 'Diana Park',
-                'next_follow_up_date': '',
-                'last_interaction_summary': 'Client chose competitor solution.',
-                'ai_recommendation': 'Analyze loss reasons and re-engage in 6 months.',
-                'created_at': (now - timedelta(days=120)).strftime('%Y-%m-%d %H:%M:%S'),
-                'updated_at': (now - timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S'),
-                'is_active': False,
-            },
-            {
-                'id': str(uuid.uuid4()),
-                'company_name': 'Quantum Finance',
-                'contact_name': 'Henry Ito',
-                'contact_email': 'henry@quantumfin.com',
-                'opportunity_name': 'Risk Analytics Engine',
-                'description': 'Real-time risk assessment and reporting module.',
-                'estimated_value': 275000.0,
-                'currency': 'USD',
-                'stage': 'proposal',
-                'priority': 'high',
-                'probability': 60.0,
-                'owner': 'Carlos Ruiz',
-                'next_follow_up_date': (now + timedelta(days=10)).strftime('%Y-%m-%d'),
-                'last_interaction_summary': 'Technical demo completed; positive feedback.',
-                'ai_recommendation': 'Provide pricing proposal and reference clients.',
-                'created_at': (now - timedelta(days=45)).strftime('%Y-%m-%d %H:%M:%S'),
-                'updated_at': (now - timedelta(days=3)).strftime('%Y-%m-%d %H:%M:%S'),
+                'stage': 'Lead nuevo',
+                'priority': 'Media',
+                'probability': 25,
+                'owner': 'Carlos Bermúdez',
+                'next_follow_up_date': today + timedelta(days=7),
+                'last_interaction_summary': 'Se realizó reunión inicial con el área de operaciones.',
+                'ai_recommendation': 'Profundizar en requerimientos de integración y fuentes de datos disponibles.',
                 'is_active': True,
             },
         ]
 
+        created = 0
         for item in data:
-            Opportunity.objects.update_or_create(id=item['id'], defaults=item)
+            _, was_created = Opportunity.objects.update_or_create(id=item['id'], defaults=item)
+            created += 1 if was_created else 0
 
-        self.stdout.write(self.style.SUCCESS(f'Successfully seeded {len(data)} opportunities'))
+        prompt, prompt_created = SystemPrompt.objects.update_or_create(
+            version='1',
+            defaults={
+                'name': 'CRM Comercial IA - v1',
+                'content': SYSTEM_PROMPT_V1,
+                'is_active': True,
+                'changelog': 'Versión inicial del asistente de CRM con tool calling, RAG y control de alucinaciones.',
+            },
+        )
+        SystemPrompt.objects.exclude(version='1').update(is_active=False)
+
+        self.stdout.write(self.style.SUCCESS(
+            f'Datos semilla cargados: {len(data)} oportunidades ({created} creadas), '
+            f'prompt v{prompt.version} {"creado" if prompt_created else "actualizado"}'
+        ))

@@ -1,6 +1,8 @@
 import json
-from datetime import datetime
 from crm.models import Opportunity
+
+STAGES = ['Lead nuevo', 'Contactado', 'Diagnóstico', 'Propuesta enviada', 'Negociación', 'Ganado', 'Perdido']
+PRIORITIES = ['Baja', 'Media', 'Alta', 'Crítica']
 
 
 class ToolRegistry:
@@ -21,12 +23,12 @@ class ToolRegistry:
                     },
                     'stage': {
                         'type': 'string',
-                        'enum': ['prospecting', 'qualification', 'proposal', 'negotiation', 'closed_won', 'closed_lost'],
+                        'enum': STAGES,
                         'description': 'Filter by stage',
                     },
                     'priority': {
                         'type': 'string',
-                        'enum': ['low', 'medium', 'high', 'critical'],
+                        'enum': PRIORITIES,
                         'description': 'Filter by priority',
                     },
                     'limit': {
@@ -63,7 +65,7 @@ class ToolRegistry:
                     'opportunity_id': {'type': 'string', 'description': 'The opportunity ID'},
                     'stage': {
                         'type': 'string',
-                        'enum': ['prospecting', 'qualification', 'proposal', 'negotiation', 'closed_won', 'closed_lost'],
+                        'enum': STAGES,
                         'description': 'New stage',
                     },
                 },
@@ -86,6 +88,15 @@ class ToolRegistry:
                 },
             },
             handler=self._get_summary,
+        )
+        self.register(
+            name='get_follow_ups',
+            description='Get opportunities that need follow-up in the next 7 days',
+            parameters={
+                'type': 'object',
+                'properties': {},
+            },
+            handler=self._get_follow_ups,
         )
 
     def register(self, name, description, parameters, handler):
@@ -144,9 +155,8 @@ class ToolRegistry:
         try:
             opp = Opportunity.objects.get(id=opportunity_id)
             opp.stage = stage
-            opp.updated_at = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
             opp.save()
-            return {'success': True, 'opportunity_id': opportunity_id, 'new_stage': stage}
+            return {'success': True, 'opportunity_id': str(opportunity_id), 'new_stage': stage}
         except Opportunity.DoesNotExist:
             return {'error': 'Opportunity not found'}
 
@@ -166,6 +176,33 @@ class ToolRegistry:
             'total_opportunities': qs.count(),
             'total_value': sum(o.estimated_value for o in qs),
             'groups': groups,
+        }
+
+    def _get_follow_ups(self, days=7):
+        from datetime import date, timedelta
+        today = date.today()
+        end = today + timedelta(days=days)
+        qs = Opportunity.objects.filter(
+            is_active=True,
+            next_follow_up_date__gte=today,
+            next_follow_up_date__lte=end,
+        ).exclude(stage__in=['Ganado', 'Perdido']).order_by('next_follow_up_date')
+        return {
+            'window_days': days,
+            'total': qs.count(),
+            'items': [
+                {
+                    'id': str(o.id),
+                    'company_name': o.company_name,
+                    'opportunity_name': o.opportunity_name,
+                    'stage': o.stage,
+                    'priority': o.priority,
+                    'probability': o.probability,
+                    'next_follow_up_date': o.next_follow_up_date.isoformat() if o.next_follow_up_date else None,
+                    'owner': o.owner,
+                }
+                for o in qs
+            ],
         }
 
     def _opp_to_dict(self, opp, detailed=False):

@@ -11,10 +11,10 @@ class ConversationMemory:
         return Conversation.objects.create()
 
     def get_history(self, conversation, limit=20):
-        messages = Message.objects.filter(conversation=conversation)
+        messages = Message.objects.filter(conversation=conversation).order_by('-created_at')
         if limit:
-            messages = messages.order_by('-created_at')[:limit]
-        return list(reversed(messages.order_by('created_at')))
+            messages = messages[:limit]
+        return list(reversed(messages))
 
     def add_message(self, conversation, role, content, tool_name='', tool_arguments=None, tool_result=''):
         return Message.objects.create(

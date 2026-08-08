@@ -1,7 +1,14 @@
 .opportunities-container {
   padding: 24px;
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
 }
 
 h2 {
@@ -11,7 +18,87 @@ h2 {
 
 .subtitle {
   color: #666;
-  margin: 0 0 24px;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Stats */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f3460;
+}
+
+.stage-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.stage-chip {
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+/* Filters */
+.filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.filter-search {
+  flex: 1;
+  min-width: 220px;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.filters select {
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  font-size: 0.9rem;
+}
+
+.error {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 16px;
   font-size: 0.9rem;
 }
 
@@ -25,7 +112,7 @@ table {
   background: white;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 th {
@@ -57,6 +144,30 @@ tr:hover td {
   text-align: right;
 }
 
+.cell-actions {
+  white-space: nowrap;
+  display: flex;
+  gap: 4px;
+}
+
+.btn-icon {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.btn-icon:hover {
+  background: #f0f0f0;
+}
+
+.btn-icon.danger:hover {
+  background: #fee2e2;
+  border-color: #fecaca;
+}
+
 .stage-badge {
   display: inline-block;
   padding: 2px 8px;
@@ -65,12 +176,13 @@ tr:hover td {
   font-weight: 600;
 }
 
-.stage-prospecting { background: #e0e7ff; color: #3730a3; }
-.stage-qualification { background: #fef3c7; color: #92400e; }
-.stage-proposal { background: #dbeafe; color: #1e40af; }
-.stage-negotiation { background: #ede9fe; color: #5b21b6; }
-.stage-won { background: #d1fae5; color: #065f46; }
-.stage-lost { background: #fee2e2; color: #991b1b; }
+.stage-new { background: #e0e7ff; color: #3730a3; }
+.stage-contactado { background: #fef3c7; color: #92400e; }
+.stage-diagnostico { background: #dbeafe; color: #1e40af; }
+.stage-propuesta { background: #fce7f3; color: #9d174d; }
+.stage-negociacion { background: #ede9fe; color: #5b21b6; }
+.stage-ganado { background: #d1fae5; color: #065f46; }
+.stage-perdido { background: #fee2e2; color: #991b1b; }
 
 .priority-badge {
   display: inline-block;
@@ -80,13 +192,177 @@ tr:hover td {
   font-weight: 600;
 }
 
-.priority-low { background: #f3f4f6; color: #6b7280; }
-.priority-medium { background: #dbeafe; color: #1e40af; }
-.priority-high { background: #fef3c7; color: #92400e; }
-.priority-critical { background: #fee2e2; color: #991b1b; }
+.priority-baja { background: #f3f4f6; color: #6b7280; }
+.priority-media { background: #dbeafe; color: #1e40af; }
+.priority-alta { background: #fef3c7; color: #92400e; }
+.priority-critica { background: #fee2e2; color: #991b1b; }
+
+/* Buttons */
+.btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-primary {
+  background: #0f3460;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #533483;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.btn-secondary:hover {
+  background: #d1d5db;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: #0f3460;
+  border: 1px solid #c7d2fe;
+}
+
+.btn-ghost:hover {
+  background: #eef2ff;
+}
 
 .loading-state, .empty-state {
   text-align: center;
   padding: 48px;
   color: #888;
+}
+
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: white;
+  border-radius: 10px;
+  width: 560px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.modal-form {
+  width: 640px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #1a1a2e;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Detail grid */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detail-item.full {
+  grid-column: 1 / -1;
+}
+
+.detail-label {
+  font-size: 0.75rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.detail-value {
+  font-size: 0.95rem;
+  color: #1a1a2e;
+  white-space: pre-wrap;
+}
+
+/* Form */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: #374151;
+}
+
+.form-field.full {
+  grid-column: 1 / -1;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: #0f3460;
+}
+
+@media (max-width: 720px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
 }

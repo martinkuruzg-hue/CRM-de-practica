@@ -8,14 +8,12 @@ class OpportunitySerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['id', 'created_at', 'updated_at']
 
-    def create(self, validated_data):
-        from datetime import datetime
-        now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-        validated_data['created_at'] = now
-        validated_data['updated_at'] = now
-        return super().create(validated_data)
 
-    def update(self, instance, validated_data):
-        from datetime import datetime
-        validated_data['updated_at'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-        return super().update(instance, validated_data)
+class OpportunitySummarySerializer(serializers.Serializer):
+    total_opportunities = serializers.IntegerField()
+    total_pipeline_value = serializers.FloatField()
+    won_value = serializers.FloatField()
+    by_stage = serializers.DictField()
+    by_priority = serializers.DictField()
+    by_owner = serializers.DictField()
+    follow_up_this_week = serializers.IntegerField()
